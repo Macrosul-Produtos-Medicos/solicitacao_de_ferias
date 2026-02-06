@@ -61,7 +61,7 @@ def add_solicitacao(request):
             solicitacao = form.save(commit=False)
             solicitacao.card = card_usuario
             solicitacao.user = request.user
-            solicitacao.fim_do_descanso = form.cleaned_data['inicio_do_descanso'] + timedelta(days=int(form.cleaned_data['dias_de_descanso']))
+            solicitacao.fim_do_descanso = form.cleaned_data['inicio_do_descanso'] + timedelta(days=int(form.cleaned_data['dias_de_descanso']) -1)
 
             # VERIFICA SE TEM SALDO DE FÉRIAS SUFICIENTE
             if int(card_usuario.saldo_de_ferias) < int(solicitacao.dias_de_descanso) + int(solicitacao.dias_vendidos):
