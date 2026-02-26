@@ -48,43 +48,26 @@ def verifica_feriados(data_inicio_das_ferias):
 @login_required
 def add_solicitacao(request):
     card_usuario = Card.objects.get(colaborador=request.user)
-    solicitacoes_pendentes = SolicitacaoDeFerias.objects.filter(
-        user=request.user, 
-        solicitacao_aprovada=False, # Adicione isso
-        ferias_rejeitadas=False
-    )
+    solicitacao_em_aberto = SolicitacaoDeFerias.objects.filter(user = request.user, ferias_finalizadas = False, ferias_rejeitadas = False )
 
-    dias_reservados = 0
-    for s in solicitacoes_pendentes:
-        dias_reservados += int(s.dias_de_descanso or 0) + int(s.dias_vendidos or 0)
-    
-    saldo_total = int(card_usuario.saldo_de_ferias or 0)
-    saldo_disponivel = saldo_total - dias_reservados
-
-    if saldo_disponivel <= 0:
-        form = SolicitacaoDeFeriasForm()
-        return render(request, 'core/index.html', {
-            'ferias_em_aberto': True,
-            'form': form 
-        })
+    #VERIFICA SE TEM SOLICITAÇÃO EM ABERTO
+    if solicitacao_em_aberto:
+        form = SolicitacaoDeFeriasForm() 
+        return render(request, 'core/index.html', {'ferias_em_aberto': True, 'form':form })
     
     if request.method == 'POST':
         form = SolicitacaoDeFeriasForm(request.POST, request.FILES)
         if form.is_valid():
             solicitacao = form.save(commit=False)
-            dias_pedidos = int(form.cleaned_data.get('dias_de_descanso') or 0)
-            dias_vendidos = int(form.cleaned_data.get('dias_vendidos') or 0)
-            
-            if (dias_pedidos + dias_vendidos) > saldo_disponivel:
-                return render(request, 'core/index.html', {
-                    'saldo_de_ferias_insuficiente': True, 
-                    'form': form 
-                })
-
             solicitacao.card = card_usuario
             solicitacao.user = request.user
-            solicitacao.fim_do_descanso = form.cleaned_data['inicio_do_descanso'] + timedelta(days=dias_pedidos - 1)
+            solicitacao.fim_do_descanso = form.cleaned_data['inicio_do_descanso'] + timedelta(days=int(form.cleaned_data['dias_de_descanso']) -1)
 
+            # VERIFICA SE TEM SALDO DE FÉRIAS SUFICIENTE
+            if int(card_usuario.saldo_de_ferias) < int(solicitacao.dias_de_descanso) + int(solicitacao.dias_vendidos):
+                return render(request, 'core/index.html', {'saldo_de_ferias_insuficiente': True, 'form':form })
+            
+            #VERIFICA SE O DIA DE INICIO É FERIADO
             verificacao_de_feriado = verifica_feriados(solicitacao.inicio_do_descanso)
 
             if verificacao_de_feriado is True:
@@ -93,8 +76,14 @@ def add_solicitacao(request):
                 return render(request, 'core/index.html', {'form': form,'success': True })
             elif verificacao_de_feriado is False:
                 return render(request, 'core/index.html', {'form': form, 'feriado': True})
+            elif isinstance(verificacao_de_feriado, str):
+                return render(request, 'core/index.html', {'form': form, 'erro_api': verificacao_de_feriado})
             else:
-                return render(request, 'core/index.html', {'form': form, 'erro_api': 'Erro na verificação.'})
+                # Fallback de segurança
+                return render(request, 'core/index.html', {
+                    'form': form,
+                    'erro_api': f'Erro inesperado ao verificar feriados.'
+                })
         else:
             return render(request, 'core/index.html', {'form': form, 'form_errors': form.errors})
     else:
