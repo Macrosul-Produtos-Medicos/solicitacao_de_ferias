@@ -50,13 +50,27 @@ def add_solicitacao(request):
     card_usuario = Card.objects.get(colaborador=request.user)
     solicitacoes_pendentes = SolicitacaoDeFerias.objects.filter(
         user=request.user, 
-        solicitacao_aprovada=False, # Adicione isso
+        solicitacao_aprovada=False,
         ferias_rejeitadas=False
     )
+
+    solicitacoes_aprovadas_e_pendentes = SolicitacaoDeFerias.objects.filter(
+        user = request.user,
+        solicitacao_aprovada = True,
+        ferias_finalizadas = False
+    )
+
 
     dias_reservados = 0
     for s in solicitacoes_pendentes:
         dias_reservados += int(s.dias_de_descanso or 0) + int(s.dias_vendidos or 0)
+
+    dias_vendidos_pendente = 0
+    for s in solicitacoes_pendentes:
+        dias_vendidos_pendente += int(s.dias_vendidos or 0)
+
+    for s in solicitacoes_aprovadas_e_pendentes:
+        dias_vendidos_pendente += int(s.dias_vendidos or 0)
     
     saldo_total = int(card_usuario.saldo_de_ferias or 0)
     saldo_disponivel = saldo_total - dias_reservados
@@ -75,9 +89,14 @@ def add_solicitacao(request):
             dias_pedidos = int(form.cleaned_data.get('dias_de_descanso') or 0)
             dias_vendidos = int(form.cleaned_data.get('dias_vendidos') or 0)
             
-            if (dias_pedidos + dias_vendidos) > saldo_disponivel:
+            if (dias_pedidos + dias_vendidos) > saldo_disponivel :
                 return render(request, 'core/index.html', {
                     'saldo_de_ferias_insuficiente': True, 
+                    'form': form 
+                })
+            elif dias_vendidos_pendente + dias_vendidos > 10:
+                return render(request, 'core/index.html', {
+                    'vender_10_dias': True, 
                     'form': form 
                 })
 
