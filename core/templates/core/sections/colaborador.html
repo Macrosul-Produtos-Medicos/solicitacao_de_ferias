@@ -10,7 +10,7 @@
    
     {% elif ferias_em_aberto %}
         <div class="bg-white rounded border border-gray-300 shadow-lg w-96 h-min p-4 mx-auto">
-            <div class="bg-red-100 text-red-700 text-center">Você já possui uma solicitação de férias em aberto!</div>
+            <div class="bg-yellow-100 text-yellow-700 text-center">Seu saldo de férias está indisponível por conta de solicitações que ainda estão em aberto!</div>
             <div class="flex items-center justify-center mt-4">
                 <a href="/" class="rounded bg-blue-950 text-white py-1.5 w-24 hover:bg-blue-800 text-center">Voltar</a>
             </div>
@@ -18,7 +18,22 @@
    
     {% elif saldo_de_ferias_insuficiente %}
         <div class="bg-white rounded border border-gray-300 shadow-lg w-96 h-min p-4 mx-auto">
-            <div class="bg-red-100 text-red-700 text-center">Você não possui saldo de férias suficiente!</div>
+            <div class="bg-red-100 text-red-700 text-center">
+                <p>Você não possui saldo de férias suficiente!</p>
+                <p>Verifique suas solicitações...</p>
+            </div>
+            <div class="flex items-center justify-center mt-4">
+                <a href="/" class="rounded bg-blue-950 text-white py-1.5 w-24 hover:bg-blue-800 text-center">Voltar</a>
+            </div>
+        </div>
+
+
+    {% elif vender_10_dias %}
+        <div class="bg-white rounded border border-gray-300 shadow-lg w-96 h-min p-4 mx-auto">
+            <div class="bg-red-100 text-red-700 text-center">
+                <p>Você não pode ter mais de 10 dias vendidos!</p>
+                <p>Verifique suas solicitações...</p>
+            </div>
             <div class="flex items-center justify-center mt-4">
                 <a href="/" class="rounded bg-blue-950 text-white py-1.5 w-24 hover:bg-blue-800 text-center">Voltar</a>
             </div>
