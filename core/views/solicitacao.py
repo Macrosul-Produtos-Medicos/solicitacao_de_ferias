@@ -5,9 +5,13 @@ from core.forms import SolicitacaoDeFeriasForm, VerificaSolicitacaoForm
 from core.models.solicitacao import SolicitacaoDeFerias
 from core.models.card import Card
 from datetime import timedelta, datetime
+import logging
 import requests
 from django.http import HttpResponseNotAllowed
 from core.views.emails import email_nova_solicitacao, email_solicitacao_reprovada, email_solicitacao_aprovada
+from core.services.sharepoint import criar_evento_sharepoint
+
+logger = logging.getLogger(__name__)
 
 def verifica_feriados(data_inicio_das_ferias):
     ano_atual = datetime.now().year
@@ -151,6 +155,10 @@ def aprovar_solicitacao(request, id_solicitacao):
             solicitacao.save()
             solicitacao.card.save()
             email_solicitacao_aprovada(solicitacao)
+            try:
+                criar_evento_sharepoint(solicitacao)
+            except Exception as e:
+                logger.error("Falha ao criar evento SharePoint para %s: %s", solicitacao.card.nome, e)
             return redirect(reverse('index'))
         else:
             return render(request, 'core/index.html', {'form': form, 'form_errors': form.errors})
